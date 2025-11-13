@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e40af">
+    <title>City Law Firm - Virtual Office</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: #1f2937; min-height: 100vh; }
+        .hidden { display: none !important; }
+        .welcome-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center; }
+        .logo { width: 120px; height: 120px; background: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); font-size: 64px; }
+        .welcome-screen h1 { color: white; font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+        .welcome-screen .subtitle { color: #93c5fd; font-size: 18px; margin-bottom: 32px; }
+        .welcome-card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .welcome-card p { color: #4b5563; line-height: 1.6; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:active { background: #1e40af; transform: scale(0.98); }
+        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        .onboarding-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .onboarding-card { background: white; border-radius: 20px; padding: 32px 24px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .step-icon { width: 80px; height: 80px; margin: 0 auto 20px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        .onboarding-card h2 { text-align: center; font-size: 24px; font-weight: 700; margin-bottom: 16px; color: #111827; }
+        .progress-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+        .progress-dot { width: 8px; height: 8px; border-radius: 4px; background: #d1d5db; transition: all 0.3s; }
+        .progress-dot.active { width: 32px; background: #2563eb; }
+        .form-group { margin-bottom: 16px; }
+        .form-group input, .form-group select { width: 100%; padding: 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 16px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #2563eb; }
+        .info-box { background: #eff6ff; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .info-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .info-item:last-child { margin-bottom: 0; }
+        .bot-preview { background: #f3e8ff; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .bot-preview h3 { color: #6b21a8; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .bot-preview p { color: #4b5563; font-size: 14px; }
+        .command-item { display: flex; gap: 12px; background: #f9fafb; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .command-item code { background: white; color: #2563eb; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-size: 13px; white-space: nowrap; }
+        .btn-group { display: flex; gap: 12px; margin-top: 24px; }
+        .btn-group .btn { flex: 1; }
+        .dashboard { padding: 20px; display: none; }
+        .dashboard.active { display: block; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #1e40af 100%); border-radius: 16px; padding: 24px; margin-bottom: 20px; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        .header .subtitle { color: #93c5fd; font-size: 14px; }
+        .user-info { background: rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 16px; margin-top: 16px; }
+        .user-info .name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+        .user-info .role { font-size: 14px; color: #bfdbfe; }
+        .section { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .section-header h2 { font-size: 20px; font-weight: 700; color: #111827; }
+        .notification-item { border-left: 4px solid; border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s; }
+        .notification-item:active { transform: scale(0.98); opacity: 0.9; }
+        .notification-urgent { background: #fef2f2; border-color: #ef4444; }
+        .notification-info { background: #eff6ff; border-color: #3b82f6; }
+        .notification-reminder { background: #fefce8; border-color: #eab308; }
+        .notification-success { background: #f0fdf4; border-color: #22c55e; }
+        .notification-item h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .notification-item p { color: #4b5563; font-size: 14px; margin-bottom: 8px; }
+        .notification-meta { display: flex; gap: 12px; font-size: 12px; color: #6b7280; }
+        .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .action-btn { background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: left; cursor: pointer; transition: all 0.3s; }
+        .action-btn:active { transform: scale(0.97); background: #f9fafb; }
+        .action-btn .icon { font-size: 32px; margin-bottom: 12px; }
+        .action-btn h3 { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+        .action-btn p { font-size: 13px; color: #6b7280; }
+        .dept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+        .dept-card { border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.3s; background: white; }
+        .dept-card.active { border-color: #2563eb; background: #eff6ff; }
+        .dept-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .dept-icon { font-size: 24px; }
+        .dept-card h3 { font-size: 16px; font-weight: 700; color: #111827; }
+        .dept-card .members { font-size: 13px; color: #6b7280; }
+        .dept-details { display: none; padding-top: 12px; border-top: 1px solid #e5e7eb; margin-top: 12px; }
+        .dept-card.active .dept-details { display: block; }
+        .dept-details h4 { font-size: 13px; font-weight: 700; color: #4b5563; margin-bottom: 8px; }
+        .channel-item { font-size: 13px; color: #2563eb; margin-bottom: 4px; cursor: pointer; }
+        .bot-item { font-size: 13px; color: #16a34a; margin-bottom: 4px; cursor: pointer; }
+        .bot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+        .bot-card { background: #f3e8ff; border: 2px solid #e9d5ff; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.3s; }
+        .bot-card:active { background: #e9d5ff; transform: scale(0.98); }
+        .bot-card h3 { font-size: 16px; font-weight: 700; color: #6b21a8; margin-bottom: 8px; }
+        .bot-card p { font-size: 14px; color: #4b5563; margin-bottom: 12px; }
+        .bot-features { display: flex; flex-direction: column; gap: 6px; }
+        .bot-feature { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4b5563; }
+        .command-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+        .command-card { background: #f9fafb; border-radius: 10px; padding: 12px; display: flex; gap: 12px; cursor: pointer; transition: all 0.3s; }
+        .command-card:active { background: #e5e7eb; transform: scale(0.98); }
+        .command-card code { background: #dbeafe; color: #1e40af; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-size: 13px; white-space: nowrap; }
+        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1f2937; color: white; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; opacity: 0; transition: all 0.3s; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        @media (max-width: 640px) { .quick-actions, .dept-grid, .bot-grid, .command-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div id="welcomeScreen" class="welcome-screen">
+        <div class="logo">⚖️</div>
+        <h1>City Law Firm</h1>
+        <p class="subtitle">Virtual Office Workspace</p>
+        <div class="welcome-card">
+            <p>Your integrated platform for case management, team collaboration, and firm operations. Access everything you need to serve clients and work seamlessly with colleagues.</p>
+        </div>
+        <button class="btn btn-primary" onclick="app.startOnboarding()">Begin Onboarding</button>
+    </div>
+
+    <div id="onboardingScreen" class="onboarding-screen hidden">
+        <div class="onboarding-card">
+            <div class="step-icon" id="stepIcon">👤</div>
+            <h2 id="stepTitle">Your Profile</h2>
+            <div class="progress-dots" id="progressDots"></div>
+            <div id="stepContent"></div>
+            <div class="btn-group">
+                <button class="btn btn-secondary hidden" id="backBtn" onclick="app.previousStep()">Back</button>
+                <button class="btn btn-primary" id="nextBtn" onclick="app.nextStep()">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard" class="dashboard">
+        <div class="header">
+            <h1>City Law Firm</h1>
+            <p class="subtitle">Virtual Office Workspace</p>
+            <div class="user-info" id="userInfo"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span style="font-size: 24px;">🔔</span>
+                <h2>Live Notifications</h2>
+            </div>
+            <div id="notifications"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span style="font-size: 24px;">⚡</span>
+                <h2>Quick Actions</h2>
+            </div>
+            <div class="quick-actions" id="quickActions"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span style="font-size: 24px;">👥</span>
+                <h2>Departments & Channels</h2>
+            </div>
+            <div class="dept-grid" id="departments"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span style="font-size: 24px;">🤖</span>
+                <h2>Automation Assistants</h2>
+            </div>
+            <div class="bot-grid" id="bots"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span style="font-size: 24px;">📚</span>
+                <h2>Essential Commands</h2>
+            </div>
+            <div class="command-grid" id="commands"></div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram?.WebApp || {
+            ready: function() {}, expand: function() {},
+            MainButton: { setText: function() {}, show: function() {}, hide: function() {}, onClick: function() {} },
+            BackButton: { show: function() {}, hide: function() {}, onClick: function() {} },
+            HapticFeedback: { impactOccurred: function() {}, notificationOccurred: function() {}, selectionChanged: function() {} },
+            showAlert: function(msg) { alert(msg); },
+            showPopup: function(params, callback) { 
+                var result = confirm(params.title + '\n\n' + params.message);
+                if (callback) callback(result ? 'ok' : 'cancel');
+            },
+            openTelegramLink: function(url) { window.open(url, '_blank'); }
+        };
+        tg.ready();
+        tg.expand();
+
+        function showToast(message) {
+            var toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(function() { toast.classList.add('show'); }, 100);
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() { document.body.removeChild(toast); }, 300);
+            }, 3000);
+        }
+
+        var app = {
+            currentStep: 0,
+            userData: { name: '', department: '', role: '' },
+            
+            onboardingSteps: [
+                { title: 'Welcome to City Law Firm', icon: '⚖️', content: '<p style="text-align:center;color:#6b7280;margin-bottom:24px;">Welcome to our digital workspace! This platform will help you stay connected with your team, manage cases, and access all firm resources.</p>', buttonText: 'Get Started' },
+                { title: 'Your Profile', icon: '👤', content: '<div class="form-group"><input type="text" id="userName" placeholder="Full Name" /></div><div class="form-group"><select id="userDept"><option value="">Select Department</option><option value="partners">Partners & Management</option><option value="litigation">Litigation Department</option><option value="corporate">Corporate Law</option><option value="family">Family Law</option><option value="criminal">Criminal Defense</option><option value="admin">Administration & HR</option></select></div><div class="form-group"><input type="text" id="userRole" placeholder="Role (e.g., Senior Associate)" /></div>', buttonText: 'Next', requiresInput: true },
+                { title: 'Your Channels', icon: '💬', content: '<p style="text-align:center;color:#6b7280;margin-bottom:24px;">You\'ll be added to relevant channels based on your department.</p><div class="info-box"><div class="info-item"><span>📱</span><span>Department Channels</span></div><div class="info-item"><span>📢</span><span>Firm-wide Announcements</span></div><div class="info-item"><span>📁</span><span>Case Management</span></div></div>', buttonText: 'Next' },
+                { title: 'Meet Your Bots', icon: '🤖', content: '<p style="text-align:center;color:#6b7280;margin-bottom:24px;">Our automated assistants help you stay on top of deadlines and cases.</p><div class="bot-preview"><h3>@CaseManagerBot</h3><p>Central case management and tracking</p></div><div class="bot-preview"><h3>@CourtDateBot</h3><p>Court appearance alerts and reminders</p></div><div class="bot-preview"><h3>@ClientUpdateBot</h3><p>Client communication tracking</p></div>', buttonText: 'Next' },
+                { title: 'Quick Commands', icon: '📚', content: '<p style="text-align:center;color:#6b7280;margin-bottom:24px;">Learn essential commands to maximize your productivity.</p><div class="command-item"><code>/myagenda</code><span>View your schedule</span></div><div class="command-item"><code>/newcase</code><span>Register new case</span></div><div class="command-item"><code>/casestatus</code><span>Check case progress</span></div><div class="command-item"><code>/help</code><span>Show all commands</span></div>', buttonText: 'Next' },
+                { title: 'You\'re All Set!', icon: '✅', content: '<p style="text-align:center;color:#6b7280;margin-bottom:24px;">Your profile is complete! You can now access all firm channels and resources. Welcome to the team!</p>', buttonText: 'Enter Workspace' }
+            ],
+            
+            departments: [
+                { id: 'partners', name: 'Partners & Management', members: 3, icon: '⚖️', channels: ['partners-private', 'management-decisions'], bots: ['@CaseAlertBot'] },
+                { id: 'litigation', name: 'Litigation Department', members: 8, icon: '💼', channels: ['litigation-general', 'litigation-cases', 'litigation-court-dates'], bots: ['@CourtDateBot', '@CaseManagerBot'] },
+                { id: 'corporate', name: 'Corporate Law', members: 6, icon: '📄', channels: ['corporate-general', 'corporate-deals', 'corporate-compliance'], bots: ['@ComplianceBot', '@DealTrackerBot'] },
+                { id: 'family', name: 'Family Law', members: 4, icon: '👨‍👩‍👧', channels: ['family-general', 'family-cases', 'family-mediation'], bots: ['@MediationScheduleBot'] },
+                { id: 'criminal', name: 'Criminal Defense', members: 5, icon: '⚠️', channels: ['criminal-general', 'criminal-cases', 'criminal-urgent'], bots: ['@UrgentCaseBot'] },
+                { id: 'admin', name: 'Administration & HR', members: 4, icon: '⚙️', channels: ['admin-general', 'hr-announcements', 'admin-facilities'], bots: ['@HRBot', '@LeaveTrackerBot'] }
+            ],
+            
+            bots: [
+                { name: '@CaseManagerBot', purpose: 'Central case management', features: ['Case tracking', 'Deadline reminders', 'Document organization', 'Status updates'] },
+                { name: '@CourtDateBot', purpose: 'Court appearance management', features: ['24hr & 1hr alerts', 'Calendar sync', 'Location details', 'Preparation reminders'] },
+                { name: '@ClientUpdateBot', purpose: 'Client communication tracking', features: ['Update reminders', 'Communication logs', 'Response templates', 'Follow-up alerts'] },
+                { name: '@BillingBot', purpose: 'Time tracking & billing', features: ['Time entry reminders', 'Billable hours tracking', 'Monthly summaries', 'Invoice generation'] },
+                { name: '@ComplianceBot', purpose: 'Compliance monitoring', features: ['Regulatory updates', 'Deadline tracking', 'Audit reminders', 'Document compliance'] }
+            ],
+            
+            commands: [
+                { cmd: '/myagenda', desc: 'View your daily schedule and court dates' },
+                { cmd: '/newcase', desc: 'Register a new case' },
+                { cmd: '/casestatus [id]', desc: 'Check status of a case' },
+                { cmd: '/requestleave', desc: 'Submit leave request' },
+                { cmd: '/resources [topic]', desc: 'Search legal resources' },
+                { cmd: '/emergency', desc: 'Alert partners about urgent matter' },
+                { cmd: '/refer [case]', desc: 'Refer case to another department' },
+                { cmd: '/help', desc: 'Show all available commands' }
+            ],
+            
+            notifications: [
+                { type: 'urgent', title: 'Court Hearing Tomorrow', message: 'Case #2024-4521: Criminal defense hearing at 9:00 AM', time: '3:45 PM Today', channel: 'criminal-urgent', assignee: 'Sarah Johnson' },
+                { type: 'info', title: 'New Case Assignment', message: 'Corporate merger consultation assigned to your team', time: '2:30 PM Today', channel: 'corporate-deals', assignee: 'Corporate Team' },
+                { type: 'reminder', title: 'Client Meeting', message: 'Family mediation session in 1 hour - Conference Room B', time: '1:00 PM Today', channel: 'family-mediation', assignee: 'Michael Chen' },
+                { type: 'success', title: 'Case Won', message: 'Litigation victory in Smith v. TechCorp! 🎉', time: '11:15 AM Today', channel: 'firm-announcements', assignee: 'All Staff' }
+            ],
+            
+            startOnboarding: function() {
+                document.getElementById('welcomeScreen').classList.add('hidden');
+                document.getElementById('onboardingScreen').classList.remove('hidden');
+                this.renderStep();
+            },
+            
+            renderStep: function() {
+                var step = this.onboardingSteps[this.currentStep];
+                document.getElementById('stepTitle').textContent = step.title;
+                document.getElementById('stepIcon').textContent = step.icon;
+                document.getElementById('stepContent').innerHTML = step.content;
+                document.getElementById('nextBtn').textContent = step.buttonText;
+                
+                var progressDots = document.getElementById('progressDots');
+                progressDots.innerHTML = '';
+                for (var i = 0; i < this.onboardingSteps.length; i++) {
+                    var dot = document.createElement('div');
+                    dot.className = 'progress-dot' + (i === this.currentStep ? ' active' : '');
+                    progressDots.appendChild(dot);
+                }
+                
+                var backBtn = document.getElementById('backBtn');
+                if (this.currentStep > 0) {
+                    backBtn.classList.remove('hidden');
+                } else {
+                    backBtn.classList.add('hidden');
+                }
+                
+                if (step.requiresInput) {
+                    var self = this;
+                    setTimeout(function() {
+                        var nameInput = document.getElementById('userName');
+                        var deptSelect = document.getElementById('userDept');
+                        var roleInput = document.getElementById('userRole');
+                        
+                        if (nameInput) nameInput.value = self.userData.name;
+                        if (deptSelect) deptSelect.value = self.userData.department;
+                        if (roleInput) roleInput.value = self.userData.role;
+                    }, 100);
+                }
+            },
+            
+            nextStep: function() {
+                if (this.currentStep === 1) {
+                    var name = document.getElementById('userName');
+                    var dept = document.getElementById('userDept');
+                    var role = document.getElementById('userRole');
+                    
+                    if (!name || !dept || !role || !name.value || !dept.value || !role.value) {
+                        tg.showAlert('Please fill in all fields');
+                        return;
+                    }
+                    
+                    this.userData.name = name.value;
+                    this.userData.department = dept.value;
+                    this.userData.role = role.value;
+                }
+                
+                if (this.currentStep < this.onboardingSteps.length - 1) {
+                    this.currentStep++;
+                    this.renderStep();
+                } else {
+                    this.showDashboard();
+                }
+            },
+            
+            previousStep: function() {
+                if (this.currentStep > 0) {
+                    this.currentStep--;
+                    this.renderStep();
+                }
+            },
+            
+            showDashboard: function() {
+                document.getElementById('onboardingScreen').classList.add('hidden');
+                document.getElementById('dashboard').classList.add('active');
+                
+                var deptObj = null;
+                for (var i = 0; i < this.departments.length; i++) {
+                    if (this.departments[i].id === this.userData.department) {
+                        deptObj = this.departments[i];
+                        break;
+                    }
+                }
+                var deptName = deptObj ? deptObj.name : this.userData.department;
+                
+                document.getElementById('userInfo').innerHTML = '<div class="name">' + this.userData.name + '</div><div class="role">' + this.userData.role + ' • ' + deptName + '</div>';
+                
+                this.renderNotifications();
+                this.renderQuickActions();
+                this.renderDepartments();
+                this.renderBots();
+                this.renderCommands();
+            },
+            
+            renderNotifications: function() {
+                var html = '';
+                for (var i = 0; i < this.notifications.length; i++) {
+                    var n = this.notifications[i];
+                    html += '<div class="notification-item notification-' + n.type + '" onclick="app.openNotification(' + i + ')">';
+                    html += '<h3>' + n.title + '</h3>';
+                    html += '<p>' + n.message + '</p>';
+                    html += '<div class="notification-meta"><span>#' + n.channel + '</span><span>•</span><span>' + n.assignee + '</span><span>•</span><span>' + n.time + '</span></div>';
+                    html += '</div>';
+                }
+                document.getElementById('notifications').innerHTML = html;
+            },
+            
+            openNotification: function(index) {
+                var notif = this.notifications[index];
+                tg.showPopup({ title: notif.title, message: notif.message + '\n\nChannel: #' + notif.channel + '\nFrom: ' + notif.assignee }, function() {});
+            },
+            
+            renderQuickActions: function() {
+                var actions = [
+                    { icon: '📁', title: 'New Case', desc: 'Register new client', action: 'newCase' },
+                    { icon: '📅', title: 'My Agenda', desc: 'View schedule', action: 'myAgenda' },
+                    { icon: '📚', title: 'Resources', desc: 'Legal library', action: 'resources' },
+                    { icon: '👥', title: 'Team', desc: 'View colleagues', action: 'team' }
+                ];
+                
+                var html = '';
+                for (var i = 0; i < actions.length; i++) {
+                    var a = actions[i];
+                    html += '<div class="action-btn" onclick="app.handleAction(\'' + a.action + '\')">';
+                    html += '<div class="icon">' + a.icon + '</div>';
+                    html += '<h3>' + a.title + '</h3>';
+                    html += '<p>' + a.desc + '</p>';
+                    html += '</div>';
+                }
+                document.getElementById('quickActions').innerHTML = html;
+            },
+            
+            handleAction: function(action) {
+                if (action === 'newCase') {
+                    var caseId = 'CASE-' + Date.now().toString().slice(-6);
+                    showToast('Case ' + caseId + ' created!');
+                    tg.showAlert('✅ New case ' + caseId + ' created successfully!');
+                } else if (action === 'myAgenda') {
+                    var today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    tg.showPopup({ title: 'My Agenda - ' + today, message: '9:00 AM - Team Standup\n11:00 AM - Client Meeting\n2:30 PM - Court Hearing Prep\n4:00 PM - Document Review' }, function() {});
+                } else if (action === 'resources') {
+                    tg.showAlert('📚 Opening legal resources library...');
+                } else if (action === 'team') {
+                    tg.showAlert('👥 Opening team directory...');
+                }
+            },
+            
+            renderDepartments: function() {
+                var html = '';
+                for (var i = 0; i < this.departments.length; i++) {
+                    var dept = this.departments[i];
+                    html += '<div class="dept-card" data-dept-id="' + dept.id + '" onclick="app.toggleDept(\'' + dept.id + '\')">';
+                    html += '<div class="dept-header">';
+                    html += '<div class="dept-icon">' + dept.icon + '</div>';
+                    html += '<div><h3>' + dept.name + '</h3><p class="members">' + dept.members + ' members</p></div>';
+                    html += '</div>';
+                    html += '<div class="dept-details">';
+                    html += '<h4>Channels:</h4>';
+                    for (var j = 0; j < dept.channels.length; j++) {
+                        html += '<div class="channel-item" onclick="event.stopPropagation(); app.openChannel(\'' + dept.channels[j] + '\')">#' + dept.channels[j] + '</div>';
+                    }
+                    html += '<h4 style="margin-top: 12px;">Bots:</h4>';
+                    for (var k = 0; k < dept.bots.length; k++) {
+                        html += '<div class="bot-item" onclick="event.stopPropagation(); app.openBot(\'' + dept.bots[k] + '\')">' + dept.bots[k] + '</div>';
+                    }
+                    html += '</div></div>';
+                }
+                document.getElementById('departments').innerHTML = html;
+            },
+            
+            toggleDept: function(id) {
+                var cards = document.querySelectorAll('.dept-card');
+                for (var i = 0; i < cards.length; i++) {
+                    if (cards[i].dataset.deptId === id) {
+                        cards[i].classList.toggle('active');
+                    } else {
+                        cards[i].classList.remove('active');
+                    }
+                }
+            },
+            
+            openChannel: function(channelName) {
+                tg.showPopup({
+                    title: '#' + channelName,
+                    message: 'This channel provides team communication and updates. Open in Telegram?'
+                }, function(buttonId) {
+                    if (buttonId === 'ok') {
+                        showToast('Opening channel in Telegram...');
+                        tg.openTelegramLink('https://t.me/citylawfirm_' + channelName.replace(/-/g, '_'));
+                    }
+                });
+            },
+            
+            openBot: function(botName) {
+                tg.showPopup({
+                    title: botName,
+                    message: 'Interact with this automation bot. Start conversation?'
+                }, function(buttonId) {
+                    if (buttonId === 'ok') {
+                        showToast('Starting bot...');
+                        var botUsername = botName.replace('@', '');
+                        tg.openTelegramLink('https://t.me/' + botUsername);
+                    }
+                });
+            },
+            
+            renderBots: function() {
+                var html = '';
+                for (var i = 0; i < this.bots.length; i++) {
+                    var bot = this.bots[i];
+                    html += '<div class="bot-card" onclick="app.interactWithBot(' + i + ')">';
+                    html += '<h3>' + bot.name + '</h3>';
+                    html += '<p>' + bot.purpose + '</p>';
+                    html += '<div class="bot-features">';
+                    for (var j = 0; j < bot.features.length; j++) {
+                        html += '<div class="bot-feature"><span>✓</span><span>' + bot.features[j] + '</span></div>';
+                    }
+                    html += '</div></div>';
+                }
+                document.getElementById('bots').innerHTML = html;
+            },
+            
+            interactWithBot: function(index) {
+                var bot = this.bots[index];
+                var featureList = '';
+                for (var i = 0; i < bot.features.length; i++) {
+                    featureList += '• ' + bot.features[i] + '\n';
+                }
+                tg.showPopup({
+                    title: bot.name,
+                    message: bot.purpose + '\n\nFeatures:\n' + featureList + '\nStart conversation with this bot?'
+                }, function(buttonId) {
+                    if (buttonId === 'ok') {
+                        var botUsername = bot.name.replace('@', '');
+                        showToast('Starting ' + bot.name + '...');
+                        tg.openTelegramLink('https://t.me/' + botUsername);
+                    }
+                });
+            },
+            
+            renderCommands: function() {
+                var html = '';
+                for (var i = 0; i < this.commands.length; i++) {
+                    var cmd = this.commands[i];
+                    html += '<div class="command-card" onclick="app.executeCommand(\'' + cmd.cmd + '\')">';
+                    html += '<code>' + cmd.cmd + '</code>';
+                    html += '<span>' + cmd.desc + '</span>';
+                    html += '</div>';
+                }
+                document.getElementById('commands').innerHTML = html;
+            },
+            
+            executeCommand: function(command) {
+                var cmd = command.split(' ')[0];
+                
+                if (cmd === '/myagenda') {
+                    this.handleAction('myAgenda');
+                } else if (cmd === '/newcase') {
+                    this.handleAction('newCase');
+                } else if (cmd === '/casestatus') {
+                    tg.showPopup({
+                        title: 'Case Status',
+                        message: 'Enter case ID to check status:'
+                    }, function(buttonId) {
+                        if (buttonId === 'ok') {
+                            tg.showAlert('Case #2024-4521: Active - Discovery phase\nNext hearing: Nov 15, 2025');
+                        }
+                    });
+                } else if (cmd === '/requestleave') {
+                    tg.showPopup({
+                        title: 'Request Leave',
+                        message: 'Select leave type and dates to submit request.'
+                    }, function(buttonId) {
+                        if (buttonId === 'ok') {
+                            showToast('Leave request submitted');
+                            tg.showAlert('✅ Leave request submitted to HR for approval');
+                        }
+                    });
+                } else if (cmd === '/resources') {
+                    this.handleAction('resources');
+                } else if (cmd === '/emergency') {
+                    tg.showPopup({
+                        title: '🚨 Emergency Alert',
+                        message: 'This will immediately notify all partners. Continue?'
+                    }, function(buttonId) {
+                        if (buttonId === 'ok') {
+                            showToast('Emergency alert sent');
+                            tg.showAlert('🚨 Emergency alert sent to all partners');
+                        }
+                    });
+                } else if (cmd === '/refer') {
+                    tg.showPopup({
+                        title: 'Refer Case',
+                        message: 'Select department to refer the case:'
+                    }, function(buttonId) {
+                        if (buttonId === 'ok') {
+                            showToast('Case referral sent');
+                            tg.showAlert('✅ Case referral sent successfully');
+                        }
+                    });
+                } else if (cmd === '/help') {
+                    tg.showPopup({
+                        title: 'Available Commands',
+                        message: '/myagenda - View schedule\n/newcase - Register case\n/casestatus - Check case\n/requestleave - Submit leave\n/resources - Legal library\n/emergency - Alert partners\n/refer - Refer case\n/help - Show commands'
+                    }, function() {});
+                } else {
+                    tg.showAlert('Command not recognized. Type /help for available commands.');
+                }
+            }
+        };
+
+        console.log('🏛️ City Law Firm Virtual Office initialized');
+        console.log('📱 Telegram WebApp ready');
+        console.log('✅ App ready for use');
+    </script>
+</body>
+</html>
